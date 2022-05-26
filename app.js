@@ -83,7 +83,8 @@ app.get("/", function(request, response) {
     } else {
       response.render("list", {
         listTitle: day,
-        newListItems: foundItems
+        newListItems: foundItems,
+        listName: day
       });
     }
   });
@@ -91,14 +92,25 @@ app.get("/", function(request, response) {
 
 app.post("/", function(request, response) {
   const itemName = request.body.newItem;
+  const listName = request.body.list;
 
   const item = new Item({
     name: itemName
   });
 
-  //save to db and redirect to home page
-  item.save();
-  response.redirect("/");
+  if (listName === day) {
+    //save to db and redirect to home page
+    item.save();
+    response.redirect("/");
+  } else {
+    List.findOne({
+      name: listName
+    }, function(error, foundList) {
+      foundList.items.push(item);
+      foundList.save();
+      response.redirect("/" + listName);
+    });
+  }
 
   // if (request.body.list === "Work List") {
   //   workItems.push(item);
@@ -109,17 +121,34 @@ app.post("/", function(request, response) {
   // }
 });
 
-app.post("/delete", function(request, response){
+app.post("/delete", function(request, response) {
   const checkedItemId = request.body.checkbox;
+  const listName = request.body.listName;
 
-  Item.findByIdAndRemove(checkedItemId, function(error){
-    if(error){
-      console.log(error);
+  if (listName === day) {
+    Item.findByIdAndRemove(checkedItemId, function(error) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Successfully deleted checked item!");
+        response.redirect("/");
+      }
+    });
+  } else {
+    List.findOneAndUpdate({
+      name: listName
+    },{
+      $pull: {items: {_id: checkedItemId}}
+    },
+  function(error, foundList){
+    if(!error){
+      response.redirect("/"+listName)
     }else{
-      console.log("Successfully deleted checked item!");
-      response.redirect("/");
+      console.log(error);
     }
   });
+  }
+
 });
 
 // app.get("/work", function(request, response) {
@@ -129,26 +158,29 @@ app.post("/delete", function(request, response){
 //   });
 // });
 
-app.get("/:customListName", function(request, response){
+app.get("/:customListName", function(request, response) {
   const customListName = request.params.customListName;
 
-  List.findOne({name: customListName}, function(error, foundList){
-    if(!error){
-      if(!foundList){
+  List.findOne({
+    name: customListName
+  }, function(error, foundList) {
+    if (!error) {
+      if (!foundList) {
         //console.log("Db doesn't exists!");
         //Create new list
         const list = new List({
-              name : customListName,
-              items : defaultItems
+          name: customListName,
+          items: defaultItems
         });
         list.save();
-        response.redirect("/"+customListName);
-      }else{
+        response.redirect("/" + customListName);
+      } else {
         //console.log("Db exists!")
         //Show existing list
         response.render("list", {
-          listTitle: ""+ day + " | "+ foundList.name,
-          newListItems: foundList.items
+          listTitle: "" + day + " | " + foundList.name,
+          newListItems: foundList.items,
+          listName: foundList.name
         })
       }
 
