@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
+
 const app = express();
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({
@@ -19,7 +20,7 @@ const itemsSchema = {
   name: {
     type: String
   }
-}
+};
 
 //Model Creation
 const Item = mongoose.model("Item", itemsSchema);
@@ -41,19 +42,31 @@ const item1 = new Item({
 // const defaultItems = [item1, item2, item3];
 const defaultItems = [item1];
 
+//New schema for list Schema
+const listSchema = {
+  name: {
+    type: String
+  },
+  items: [itemsSchema]
+};
+
+const List = mongoose.model("List", listSchema);
+
 //version 1 storage!
 // var items = [];
 // var workItems = [];
 
-app.get("/", function(request, response) {
-  var today = new Date();
+var today = new Date();
 
-  var options = {
-    weeday: "long",
-    day: "numeric",
-    month: "long"
-  };
-  var day = today.toLocaleDateString("en-US", options);
+var options = {
+  weeday: "long",
+  day: "numeric",
+  month: "long"
+};
+var day = today.toLocaleDateString("en-US", options);
+
+app.get("/", function(request, response) {
+
 
   //Find items from // DEBUG:
   Item.find({}, function(error, foundItems) {
@@ -109,11 +122,39 @@ app.post("/delete", function(request, response){
   });
 });
 
-app.get("/work", function(request, response) {
-  response.render("list", {
-    listTitle: "Work List",
-    newListItems: workItems
+// app.get("/work", function(request, response) {
+//   response.render("list", {
+//     listTitle: "Work List",
+//     newListItems: workItems
+//   });
+// });
+
+app.get("/:customListName", function(request, response){
+  const customListName = request.params.customListName;
+
+  List.findOne({name: customListName}, function(error, foundList){
+    if(!error){
+      if(!foundList){
+        //console.log("Db doesn't exists!");
+        //Create new list
+        const list = new List({
+              name : customListName,
+              items : defaultItems
+        });
+        list.save();
+        response.redirect("/"+customListName);
+      }else{
+        //console.log("Db exists!")
+        //Show existing list
+        response.render("list", {
+          listTitle: ""+ day + " | "+ foundList.name,
+          newListItems: foundList.items
+        })
+      }
+
+    }
   });
+
 });
 
 app.listen(3000, function() {
