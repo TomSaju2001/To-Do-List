@@ -76,15 +76,23 @@ app.get("/", function(request, response) {
 });
 
 app.post("/", function(request, response) {
-  var item = request.body.newItem;
+  const itemName = request.body.newItem;
 
-  if (request.body.list === "Work List") {
-    workItems.push(item);
-    response.redirect("/work");
-  } else {
-    items.push(item);
-    response.redirect("/");
-  }
+  const item = new Item({
+    name: itemName
+  });
+
+  //save to db and redirect to home page
+  item.save();
+  response.redirect("/");
+
+  // if (request.body.list === "Work List") {
+  //   workItems.push(item);
+  //   response.redirect("/work");
+  // } else {
+  //   items.push(item);
+  //   response.redirect("/");
+  // }
 });
 
 app.get("/work", function(request, response) {
