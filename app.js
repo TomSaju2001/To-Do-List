@@ -26,19 +26,20 @@ const Item = mongoose.model("Item", itemsSchema);
 
 //Data1
 const item1 = new Item({
-  name: "Welcome to your todolist!!"
+  name: "Sample Item!!"
 });
 
-const item2 = new Item({
-  name: "Hit the + button to add new item."
-});
-
-const item3 = new Item({
-  name: "<-- Hit this to delete an item."
-});
+// const item2 = new Item({
+//   name: "Hit the + button to add new item."
+// });
+//
+// const item3 = new Item({
+//   name: "<-- Hit this to delete an item."
+// });
 
 //saving it in an array so as to use insertMany() method instead of insertOne()
-const defaultItems = [item1, item2, item3];
+// const defaultItems = [item1, item2, item3];
+const defaultItems = [item1];
 
 //version 1 storage!
 // var items = [];
@@ -93,6 +94,19 @@ app.post("/", function(request, response) {
   //   items.push(item);
   //   response.redirect("/");
   // }
+});
+
+app.post("/delete", function(request, response){
+  const checkedItemId = request.body.checkbox;
+
+  Item.findByIdAndRemove(checkedItemId, function(error){
+    if(error){
+      console.log(error);
+    }else{
+      console.log("Successfully deleted checked item!");
+      response.redirect("/");
+    }
+  });
 });
 
 app.get("/work", function(request, response) {
